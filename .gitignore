@@ -260,3 +260,5 @@ docs/dev
 
 # Vagrant
 .vagrant
+
+.circleci
