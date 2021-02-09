@@ -70,8 +70,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator
 INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const {
   // replace with your own code
-  KeyType key{array[index].first};
-  return key;
+  return array[index].first;
 }
 
 /*
@@ -129,7 +128,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   int start = size >> 1;
   recipient->CopyNFrom(&array[start], size - start);
   IncreaseSize(start - size);
-  // 修改next_page ?
 }
 
 /*
