@@ -86,7 +86,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
     frame_id = map_iter->second;
     Page &page = pages_[frame_id];
     page.pin_count_--;
-    page.is_dirty_ = is_dirty;
+    page.is_dirty_ = page.is_dirty_ || is_dirty;
     if (0 == page.pin_count_) {
       replacer_->Unpin(frame_id);
     }

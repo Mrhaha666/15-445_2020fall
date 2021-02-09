@@ -35,7 +35,9 @@ BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manag
  * Helper function to decide whether current b+tree is empty
  */
 INDEX_TEMPLATE_ARGUMENTS
-bool BPLUSTREE_TYPE::IsEmpty() const { return true; }
+bool BPLUSTREE_TYPE::IsEmpty() const {
+  return root_page_id_ == INVALID_PAGE_ID;
+}
 /*****************************************************************************
  * SEARCH
  *****************************************************************************/
@@ -46,7 +48,7 @@ bool BPLUSTREE_TYPE::IsEmpty() const { return true; }
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) {
-  if (root_page_id_ == INVALID_PAGE_ID) {
+  if (IsEmpty()) {
     return false;
   }
   Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
@@ -81,7 +83,7 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) {
-  if (root_page_id_ == INVALID_PAGE_ID) {
+  if (IsEmpty()) {
     StartNewTree(key, value);
     return true;
   }
@@ -130,7 +132,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   int old_size = leaf_page->GetSize();
   int new_size = leaf_page->Insert(key, value, comparator_);
   if (old_size < new_size) {
-    if (new_size == leaf_page->GetMaxSize()) {
+    if (new_size == leaf_max_size_) {
       LeafPage *new_leaf_page = Split(leaf_page);
       KeyType middle_key = leaf_page->KeyAt(leaf_page->GetMinSize());
       InsertIntoParent(leaf_page, middle_key , new_leaf_page, transaction);
@@ -213,7 +215,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   auto parent_page = reinterpret_cast<InternalPage *>(page);
   parent_page->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
   new_node->SetParentPageId(parent_page_id);
-  if (parent_page->GetSize() == parent_page->GetMaxSize()) {
+  if (parent_page->GetSize() == internal_max_size_) {
     InternalPage *new_internal_page = Split(parent_page);
     KeyType middle_key = parent_page->KeyAt(parent_page->GetMinSize());
     InsertIntoParent(parent_page, middle_key, new_internal_page, transaction);
@@ -234,7 +236,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
  */
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
-  if (root_page_id_ == INVALID_PAGE_ID) {
+  if (IsEmpty()) {
     return;
   }
   Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
@@ -499,7 +501,23 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() { return INDEXITERATOR_TYPE(); }
+INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE();
+  }
+  page_id_t min = root_page_id_;
+  Page *min_page = buffer_pool_manager_->FetchPage(min);
+  BPlusTreePage *min_tree_page = reinterpret_cast<BPlusTreePage *>(min_page);
+  while (min_tree_page->IsLeafPage() ) {
+    InternalPage *min_child_page = reinterpret_cast<InternalPage *>(min_tree_page);
+    min = min_child_page->ValueAt(0);
+    buffer_pool_manager_->UnpinPage(min_page->GetPageId(), false);
+    min_page = buffer_pool_manager_->FetchPage(min);
+    min_tree_page = reinterpret_cast<BPlusTreePage *>(min_page);
+  }
+  buffer_pool_manager_->UnpinPage(min, false);
+  return INDEXITERATOR_TYPE(buffer_pool_manager_, min, 0);
+}
 
 /*
  * Input parameter is low key, find the leaf page that contains the input key
@@ -507,7 +525,27 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() { return INDEXITERATOR_TYPE(); }
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) { return INDEXITERATOR_TYPE(); }
+INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE();
+  }
+  Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
+  BPlusTreePage *b_plus_page = reinterpret_cast<BPlusTreePage *>(page);
+  while ( ! b_plus_page->IsLeafPage()) {
+    InternalPage *internal_page = reinterpret_cast<InternalPage *>(b_plus_page);
+    page_id_t child_page_id = internal_page->Lookup(key, comparator_);
+    buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
+    page = buffer_pool_manager_->FetchPage(child_page_id);
+    b_plus_page = reinterpret_cast<BPlusTreePage *>(page);
+  }
+  LeafPage *leaf_page = reinterpret_cast<LeafPage *>(b_plus_page);
+  int index = leaf_page->KeyIndex(key, comparator_);
+  buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
+  if ( index != -1) {
+    return INDEXITERATOR_TYPE(buffer_pool_manager_, leaf_page->GetPageId(), index);
+  }
+  return INDEXITERATOR_TYPE();
+}
 
 /*
  * Input parameter is void, construct an index iterator representing the end
@@ -515,7 +553,23 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) { return INDEXITERA
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(); }
+INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE();
+  }
+  page_id_t max = root_page_id_;
+  Page *max_page = buffer_pool_manager_->FetchPage(max);
+  BPlusTreePage *max_tree_page = reinterpret_cast<BPlusTreePage *>(max_page);
+  while (max_tree_page->IsLeafPage() ) {
+    InternalPage *max_child_page = reinterpret_cast<InternalPage *>(max_tree_page);
+    max = max_child_page->ValueAt(max_child_page->GetSize()-1);
+    buffer_pool_manager_->UnpinPage(max_page->GetPageId(), false);
+    max_page = buffer_pool_manager_->FetchPage(max);
+    max_tree_page = reinterpret_cast<BPlusTreePage *>(max_page);
+  }
+  buffer_pool_manager_->UnpinPage(max, false);
+  return INDEXITERATOR_TYPE(buffer_pool_manager_, max, last->GetSize());
+}
 
 /*****************************************************************************
  * UTILITIES AND DEBUG
