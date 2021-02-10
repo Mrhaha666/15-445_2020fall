@@ -28,6 +28,7 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
+  SetPageType(IndexPageType::LEAF_PAGE);
   SetPageId(page_id);
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
@@ -98,15 +99,16 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
     IncreaseSize(1);
     return 1;
   }
-  int insert_pos{};
+  int insert_pos = size;
   for (int i = 0; i < size; ++i) {
-    if (comparator(array[i].first, key) >= 0) {
+    int f = comparator(array[i].first, key);
+    if ( f > 0) {
       insert_pos = i;
       break;
     }
-  }
-  if (comparator(key, array[insert_pos].first) == 0) {
-    return size;
+    if ( f == 0) {
+      return size;
+    }
   }
   for (int i = size - 1; i >= insert_pos; --i) {
     array[i + 1] = array[i];
@@ -125,7 +127,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   int size = GetSize();
-  int start = size >> 1;
+  int start = GetMinSize();
   recipient->CopyNFrom(&array[start], size - start);
   IncreaseSize(start - size);
 }
@@ -199,7 +201,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
   int size = GetSize();
   recipient->CopyNFrom(&array[0], size);
   IncreaseSize(-size);
-  // recipient->SetNextPageId(GetNextPageId());
 }
 
 /*****************************************************************************
@@ -210,13 +211,10 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
-  //int reci_tail = recipient->GetSize();
   recipient->CopyLastFrom(array[0]);
-  // Remove(0);
-  int i = 0;
   int size = GetSize();
-  while (i < size - 1) {
-    array[i] = array[++i];
+  for (int i = 0; i < size - 1; ++i) {
+    array[i] = array[i + 1];
   }
   IncreaseSize(-1);
 }
