@@ -47,9 +47,12 @@ const MappingType &INDEXITERATOR_TYPE::operator*() {
 
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
-  index_in_leaf_++;
+  index_in_leaf_ ++;
   if (index_in_leaf_ == leaf_->GetSize()) {
     page_id_t next_page_id = leaf_->GetNextPageId();
+    if (next_page_id == INVALID_PAGE_ID) {
+      return *this;
+    }
     buffer_pool_manager_->UnpinPage(leaf_->GetPageId(), false);
     Page *page = buffer_pool_manager_->FetchPage(next_page_id);
     leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
