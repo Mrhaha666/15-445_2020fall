@@ -68,7 +68,7 @@ TEST(BptTreeTest, UnitTest) {
   auto header_page = bpm->NewPage(&page_id);
   // create b+ tree
   BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, leaf_max_size, internal_max_size);
-  LOG_DEBUG("creating empty tree");
+  //LOG_DEBUG("creating empty tree");
   // create transaction
   Transaction *transaction = new Transaction(0);
   while (!quit) {

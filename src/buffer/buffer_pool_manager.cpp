@@ -79,7 +79,7 @@ update:
   page.pin_count_ = 1;
   page_table_.insert(std::make_pair(page_id, frame_id));
   replacer_->Pin(frame_id);
-  LOG_DEBUG("leaving from FetchPage %d", page_id);
+  //LOG_DEBUG("leaving from FetchPage %d", page_id);
   return &page;
 }
 
