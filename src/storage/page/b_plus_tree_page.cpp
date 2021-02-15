@@ -64,6 +64,20 @@ void BPlusTreePage::SetParentPageId(page_id_t parent_page_id) { parent_page_id_ 
 page_id_t BPlusTreePage::GetPageId() const { return page_id_; }
 void BPlusTreePage::SetPageId(page_id_t page_id) { page_id_ = page_id; }
 
+bool BPlusTreePage::IsSafe(AccessMode access_mode) const {
+  int size = GetSize();
+  if (access_mode == AccessMode::DELETE) {
+    if ((IsRootPage() && size > 2) || size > GetMinSize()) {
+      return true;
+    }
+  } else if (access_mode == AccessMode::INSERT) { // 插入
+    if (size < max_size_ - 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /*
  * Helper methods to set lsn
  */
