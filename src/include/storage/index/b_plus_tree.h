@@ -88,7 +88,7 @@ class BPlusTree {
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                         Transaction *transaction = nullptr);
 
-  Page *FindLeafPagePessimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction);
+  bool FindLeafPagePessimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction);
 
   Page *FindLeafPageOptimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction, bool leftMost = false);
 
@@ -120,6 +120,7 @@ class BPlusTree {
 
   // member variable
   std::string index_name_;
+  std::atomic_flag hold_root_= ATOMIC_FLAG_INIT;
   page_id_t root_page_id_;
   BufferPoolManager *buffer_pool_manager_;
   KeyComparator comparator_;

@@ -140,7 +140,7 @@ void OutputLogHeader(const char *file, int line, const char *func, int level);
 #ifdef LOG_DEBUG_ENABLED
 #undef LOG_DEBUG_ENABLED
 #endif
-#if LOG_LEVEL <= LOG_LEVEL_DEBUG
+#if LOG_LEVEL < LOG_LEVEL_DEBUG
 #define LOG_DEBUG_ENABLED
 // #pragma message("LOG_DEBUG was enabled.")
 #define LOG_DEBUG(...)                                                      \
