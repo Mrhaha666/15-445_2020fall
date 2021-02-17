@@ -38,7 +38,6 @@ class BPlusTree {
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
 
-
  public:
   explicit BPlusTree(std::string name, BufferPoolManager *buffer_pool_manager, const KeyComparator &comparator,
                      int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
@@ -90,8 +89,8 @@ class BPlusTree {
 
   bool FindLeafPagePessimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction);
 
-  Page *FindLeafPageOptimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction, bool leftMost = false);
-
+  Page *FindLeafPageOptimistic(const KeyType &key, AccessMode access_mode, Transaction *transaction,
+                               bool leftMost = false);
 
   void ReleaseAncestorsLock(Transaction *transaction);
 
@@ -117,10 +116,9 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
-
   // member variable
   std::string index_name_;
-  std::atomic_flag hold_root_= ATOMIC_FLAG_INIT;
+  std::atomic_flag hold_root_ = ATOMIC_FLAG_INIT;
   page_id_t root_page_id_;
   BufferPoolManager *buffer_pool_manager_;
   KeyComparator comparator_;

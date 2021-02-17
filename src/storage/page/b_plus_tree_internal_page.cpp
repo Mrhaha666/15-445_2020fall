@@ -9,7 +9,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <iostream>
 #include <sstream>
 
 #include "common/exception.h"
@@ -42,9 +41,7 @@ KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  array[index].first = key;
-}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { array[index].first = key; }
 
 /*
  * Helper method to find and return array index(or offset), so that its value
@@ -66,9 +63,7 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
  * offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
-  return array[index].second;
-}
+ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const { return array[index].second; }
 
 /*****************************************************************************
  * LOOKUP
@@ -84,10 +79,10 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
   int i;
   for (i = 1; i < size; ++i) {
     if (comparator(key, array[i].first) < 0) {
-      return array[i-1].second;
+      return array[i - 1].second;
     }
   }
-  return array[i-1].second;
+  return array[i - 1].second;
 }
 
 /*****************************************************************************
@@ -120,9 +115,9 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
   }
   int size = GetSize();
   for (int n = size - 1; n > i; n--) {
-    array[n+1] = array[n];
+    array[n + 1] = array[n];
   }
-  array[i+1] = std::make_pair(new_key, new_value);
+  array[i + 1] = std::make_pair(new_key, new_value);
   IncreaseSize(1);
   return size + 1;
 }
@@ -227,7 +222,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *rec
   // Remove(0);
   int size = GetSize();
   for (int i = 0; i < size - 1; ++i) {
-    array[i] = array[i+1];
+    array[i] = array[i + 1];
   }
   IncreaseSize(-1);
 }
@@ -253,7 +248,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
                                                        BufferPoolManager *buffer_pool_manager) {
   int size = GetSize();
   recipient->array[0].first = middle_key;
-  recipient->CopyFirstFrom(array[size-1], buffer_pool_manager);
+  recipient->CopyFirstFrom(array[size - 1], buffer_pool_manager);
   IncreaseSize(-1);
 }
 
@@ -264,7 +259,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
   for (int n = GetSize() - 1; n >= 0; n--) {
-    array[n+1] = array[n];
+    array[n + 1] = array[n];
   }
   array[0] = pair;
   page_id_t page_id = pair.second;

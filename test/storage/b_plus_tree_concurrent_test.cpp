@@ -92,7 +92,7 @@ void DeleteHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
   delete transaction;
 }
 
-//TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest1) {
+// TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest1) {
 TEST(BPlusTreeConcurrentTest, InsertTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
@@ -146,7 +146,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest1) {
   remove("test.log");
 }
 
-//TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest2) {
+// TEST(BPlusTreeConcurrentTest, DISABLED_InsertTest2) {
 TEST(BPlusTreeConcurrentTest, InsertTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
@@ -199,7 +199,7 @@ TEST(BPlusTreeConcurrentTest, InsertTest2) {
   remove("test.log");
 }
 
-//TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
+// TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest1) {
 TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
@@ -208,7 +208,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   DiskManager *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
   // create and fetch header_page
   page_id_t page_id;
@@ -243,7 +243,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest1) {
   remove("test.log");
 }
 
-//TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
+// TEST(BPlusTreeConcurrentTest, DISABLED_DeleteTest2) {
 TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
@@ -252,7 +252,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   DiskManager *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
   // create and fetch header_page
   page_id_t page_id;
@@ -288,7 +288,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest2) {
   remove("test.log");
 }
 
-//TEST(BPlusTreeConcurrentTest, DISABLED_MixTest) {
+// TEST(BPlusTreeConcurrentTest, DISABLED_MixTest) {
 TEST(BPlusTreeConcurrentTest, MixTest) {
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
@@ -297,7 +297,7 @@ TEST(BPlusTreeConcurrentTest, MixTest) {
   DiskManager *disk_manager = new DiskManager("test.db");
   BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
   // create b+ tree
-  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
+  BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator, 2, 3);
   GenericKey<8> index_key;
 
   // create and fetch header_page

@@ -11,7 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "buffer/buffer_pool_manager.h"
-#include "common/logger.h"
 
 #include <list>
 #include <unordered_map>
@@ -43,7 +42,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   // 2.     If R is dirty, write it back to the disk.
   // 3.     Delete R from the page table and insert P.
   // 4.     Update P's metadata, read in the page content from disk, and then return a pointer to P.
-  //LOG_DEBUG("entering into FetchPage %d", page_id);
+  // LOG_DEBUG("entering into FetchPage %d", page_id);
   std::scoped_lock<std::mutex> lk{latch_};
   frame_id_t frame_id;
   auto map_iter = page_table_.find(page_id);
@@ -52,7 +51,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     replacer_->Pin(frame_id);
     Page &page = pages_[frame_id];
     page.pin_count_++;
-    //LOG_DEBUG("leaving from FetchPage %d", page_id);
+    // LOG_DEBUG("leaving from FetchPage %d", page_id);
     return &page;
   }
   if (!free_list_.empty()) {
@@ -64,12 +63,14 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   if (replacer_->Victim(&frame_id)) {
     Page &page = pages_[frame_id];
     if (page.is_dirty_) {
-      FlushPage(page.page_id_);
+      // FlushPage(page.page_id_);
+        disk_manager_->WritePage(page.page_id_, reinterpret_cast<char *>(&page));
+        page.is_dirty_ = false;
     }
     page_table_.erase(page.page_id_);
     goto update;
   }
-  //LOG_DEBUG("leaving from FetchPage %d", page_id);
+  // LOG_DEBUG("leaving from FetchPage %d", page_id);
   return nullptr;
 
 update:
@@ -79,7 +80,7 @@ update:
   page.pin_count_ = 1;
   page_table_.insert(std::make_pair(page_id, frame_id));
   replacer_->Pin(frame_id);
-  //LOG_DEBUG("leaving from FetchPage %d", page_id);
+  // LOG_DEBUG("leaving from FetchPage %d", page_id);
   return &page;
 }
 
@@ -102,13 +103,14 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
 
 bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   // Make sure you call DiskManager::WritePage!
+  std::scoped_lock<std::mutex> lk{latch_};
   auto map_iter = page_table_.find(page_id);
   frame_id_t frame_id;
   if (map_iter != page_table_.end()) {
     frame_id = map_iter->second;
     Page &page = pages_[frame_id];
-    page.is_dirty_ = false;
     disk_manager_->WritePage(page_id, reinterpret_cast<char *>(&page));
+    page.is_dirty_ = false;
     return true;
   }
   return false;
@@ -120,7 +122,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
   // 2.   Pick a victim page P from either the free list or the replacer. Always pick from the free list first.
   // 3.   Update P's metadata, zero out memory and add P to the page table.
   // 4.   Set the page ID output parameter. Return a pointer to P.
-  //LOG_DEBUG("entering into NewPage");
+  // LOG_DEBUG("entering into NewPage");
   std::scoped_lock<std::mutex> lk{latch_};
   frame_id_t frame_id;
   if (!free_list_.empty()) {
@@ -131,12 +133,13 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
   if (replacer_->Victim(&frame_id)) {
     Page &page = pages_[frame_id];
     if (page.is_dirty_) {
-      FlushPage(page.page_id_);
+      disk_manager_->WritePage(page.page_id_, reinterpret_cast<char *>(&page));
+      page.is_dirty_ = false;
     }
     page_table_.erase(page.page_id_);
     goto update;
   }
-  //LOG_DEBUG("leaving from NewPage");
+  // LOG_DEBUG("leaving from NewPage");
   return nullptr;
 update:
   *page_id = disk_manager_->AllocatePage();
@@ -146,7 +149,7 @@ update:
   page.pin_count_ = 1;
   page_table_.insert(std::make_pair(*page_id, frame_id));
   replacer_->Pin(frame_id);
-  //LOG_DEBUG("leaving from NewPage");
+  // LOG_DEBUG("leaving from NewPage");
   return &page;
 }
 
@@ -181,8 +184,11 @@ void BufferPoolManager::FlushAllPagesImpl() {
   // You can do it!
   std::scoped_lock<std::mutex> lk{latch_};
   for (const auto &e : page_table_) {
-    if (pages_[e.second].is_dirty_) {
-      FlushPage(e.first);
+    Page &page = pages_[e.second];
+    if (page.is_dirty_) {
+      // FlushPage(e.first);
+      disk_manager_->WritePage(page.page_id_, reinterpret_cast<char *>(&page));
+      page.is_dirty_ = false;
     }
   }
 }

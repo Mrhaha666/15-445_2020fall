@@ -21,19 +21,14 @@ INDEXITERATOR_TYPE::~IndexIterator() {
   }
 }
 
-
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager,
-                                  page_id_t leaf_page_id,
-                                  int index_in_leaf)
-    : buffer_pool_manager_{buffer_pool_manager},
-      index_in_leaf_{index_in_leaf} {
-    Page *page = buffer_pool_manager_->FetchPage(leaf_page_id);
-    if (page != nullptr) {
-      leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
-    };
+INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager, page_id_t leaf_page_id, int index_in_leaf)
+    : buffer_pool_manager_{buffer_pool_manager}, index_in_leaf_{index_in_leaf} {
+  Page *page = buffer_pool_manager_->FetchPage(leaf_page_id);
+  if (page != nullptr) {
+    leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
+  }
 }
-
 
 INDEX_TEMPLATE_ARGUMENTS
 bool INDEXITERATOR_TYPE::isEnd() {
@@ -41,13 +36,11 @@ bool INDEXITERATOR_TYPE::isEnd() {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-const MappingType &INDEXITERATOR_TYPE::operator*() {
-  return leaf_->GetItem(index_in_leaf_);
-}
+const MappingType &INDEXITERATOR_TYPE::operator*() { return leaf_->GetItem(index_in_leaf_); }
 
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
-  index_in_leaf_ ++;
+  index_in_leaf_++;
   if (index_in_leaf_ == leaf_->GetSize()) {
     page_id_t next_page_id = leaf_->GetNextPageId();
     if (next_page_id == INVALID_PAGE_ID) {
@@ -60,7 +53,6 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
   }
   return *this;
 }
-
 
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator=(const INDEXITERATOR_TYPE &rhs) {

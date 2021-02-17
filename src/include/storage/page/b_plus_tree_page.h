@@ -41,7 +41,7 @@ enum class IndexPageType { INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE };
  * ----------------------------------------------------------------------------
  */
 
-enum AccessMode {SEARCH, DELETE, INSERT};
+enum AccessMode { SEARCH, DELETE, INSERT };
 class BPlusTreePage {
  public:
   bool IsLeafPage() const;
@@ -62,7 +62,6 @@ class BPlusTreePage {
   page_id_t GetPageId() const;
   void SetPageId(page_id_t page_id);
   bool IsSafe(AccessMode access_mode) const;
-
 
   void SetLSN(lsn_t lsn = INVALID_LSN);
 
