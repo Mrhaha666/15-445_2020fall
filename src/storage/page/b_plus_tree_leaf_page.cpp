@@ -151,13 +151,32 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const {
   int size = GetSize();
-  for (int i = 0; i < size; ++i) {
-    if (comparator(key, array[i].first) == 0) {
-      *value = array[i].second;
+  int lo = 0;
+  int hi = size;
+  int mi;
+  while (lo < hi) {
+    mi = (lo + hi) >> 1;
+    if (comparator(key, array[mi].first) < 0) {
+      hi = mi;
+    } else {
+      lo = mi + 1;
+    }
+  }
+  if (lo > 0) {
+    if (comparator(key, array[lo - 1].first) == 0) {
+      *value = array[lo - 1].second;
       return true;
     }
   }
   return false;
+
+//  for (int i = 0; i < size; ++i) {
+//    if (comparator(key, array[i].first) == 0) {
+//      *value = array[i].second;
+//      return true;
+//    }
+//  }
+//  return false;
 }
 
 /*****************************************************************************

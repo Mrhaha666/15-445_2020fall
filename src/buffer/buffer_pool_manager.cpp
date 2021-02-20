@@ -64,8 +64,8 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     Page &page = pages_[frame_id];
     if (page.is_dirty_) {
       // FlushPage(page.page_id_);
-        disk_manager_->WritePage(page.page_id_, reinterpret_cast<char *>(&page));
-        page.is_dirty_ = false;
+      disk_manager_->WritePage(page.page_id_, reinterpret_cast<char *>(&page));
+      page.is_dirty_ = false;
     }
     page_table_.erase(page.page_id_);
     goto update;
@@ -105,9 +105,8 @@ bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   // Make sure you call DiskManager::WritePage!
   std::scoped_lock<std::mutex> lk{latch_};
   auto map_iter = page_table_.find(page_id);
-  frame_id_t frame_id;
   if (map_iter != page_table_.end()) {
-    frame_id = map_iter->second;
+    frame_id_t frame_id = map_iter->second;
     Page &page = pages_[frame_id];
     disk_manager_->WritePage(page_id, reinterpret_cast<char *>(&page));
     page.is_dirty_ = false;

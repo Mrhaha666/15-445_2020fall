@@ -48,7 +48,7 @@ class LRUReplacer : public Replacer {
 
  private:
   // TODO(student): implement me!
-  char *pin_bits_{nullptr};
+  unsigned char *pin_bits_{nullptr};
   std::mutex latch_;
   size_t size_{0};
   std::list<frame_id_t> unpin_frames_{};

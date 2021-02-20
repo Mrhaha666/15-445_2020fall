@@ -11,6 +11,7 @@
 #pragma once
 
 #include <queue>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -119,6 +120,7 @@ class BPlusTree {
   // member variable
   std::string index_name_;
   std::atomic_flag hold_root_ = ATOMIC_FLAG_INIT;
+  //mutable std::shared_mutex mutex_;
   page_id_t root_page_id_;
   BufferPoolManager *buffer_pool_manager_;
   KeyComparator comparator_;
