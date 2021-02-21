@@ -37,11 +37,7 @@ class IndexIterator {
 
   IndexIterator &operator++();
 
-  bool operator==(const IndexIterator &itr) const {
-    return leaf_ == itr.leaf_ && index_in_leaf_ == itr.index_in_leaf_;
-    //           && last_leaf_ == itr.last_leaf_
-    //           && end_index_last_leaf_ = itr.end_index_last_leaf_;
-  }
+  bool operator==(const IndexIterator &itr) const { return leaf_ == itr.leaf_ && index_in_leaf_ == itr.index_in_leaf_; }
 
   bool operator!=(const IndexIterator &itr) const { return !(*this == itr); }
 
@@ -53,7 +49,7 @@ class IndexIterator {
   BufferPoolManager *buffer_pool_manager_{nullptr};
   BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *leaf_{nullptr};
   //  BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *last_leaf_{nullptr};
-  int index_in_leaf_{};
+  int index_in_leaf_{-1};
   //  int end_index_last_leaf_{};
 };
 

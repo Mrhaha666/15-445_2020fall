@@ -50,14 +50,32 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { next_pa
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  int i;
   int size = GetSize();
-  for (i = 0; i < size; ++i) {
-    if (comparator(array[i].first, key) >= 0) {
-      return i;
+//  int i;
+//  for (i = 0; i < size; ++i) {
+//    if (comparator(array[i].first, key) >= 0) {
+//      return i;
+//    }
+//  }
+//  return -1;
+  int lo = 0;
+  int hi = size;
+  int mi;
+  while (lo < hi) {
+    mi = (lo + hi) >> 1;
+    if (comparator(key, array[mi].first) < 0) {
+      hi = mi;
+    } else {
+      lo = mi + 1;
     }
   }
-  return -1;
+  if (lo > 0) {
+    if (comparator(key, array[lo - 1].first) == 0) {
+      return lo - 1;
+    }
+    return lo == size ? -1 : lo;
+  }
+  return 0;
 }
 
 /*
@@ -95,17 +113,35 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
     IncreaseSize(1);
     return 1;
   }
-  int insert_pos = size;
-  for (int i = 0; i < size; ++i) {
-    int f = comparator(array[i].first, key);
-    if (f > 0) {
-      insert_pos = i;
-      break;
+
+  int lo = 0;
+  int hi = size;
+  int mi;
+  while (lo < hi) {
+    mi = (lo + hi) >> 1;
+    if (comparator(key, array[mi].first) < 0) {
+      hi = mi;
+    } else {
+      lo = mi + 1;
     }
-    if (f == 0) {
+  }
+  if (lo > 0) {
+    if (comparator(key, array[lo - 1].first) == 0) {
       return size;
     }
   }
+  int insert_pos = lo;
+  //  int insert_pos = size;
+  //  for (int i = 0; i < size; ++i) {
+  //    int f = comparator(array[i].first, key);
+  //    if (f > 0) {
+  //      insert_pos = i;
+  //      break;
+  //    }
+  //    if (f == 0) {
+  //      return size;
+  //    }
+  //  }
   for (int i = size - 1; i >= insert_pos; --i) {
     array[i + 1] = array[i];
   }
@@ -170,13 +206,13 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
   }
   return false;
 
-//  for (int i = 0; i < size; ++i) {
-//    if (comparator(key, array[i].first) == 0) {
-//      *value = array[i].second;
-//      return true;
-//    }
-//  }
-//  return false;
+  //  for (int i = 0; i < size; ++i) {
+  //    if (comparator(key, array[i].first) == 0) {
+  //      *value = array[i].second;
+  //      return true;
+  //    }
+  //  }
+  //  return false;
 }
 
 /*****************************************************************************
@@ -191,10 +227,34 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
   int size = GetSize();
-  int i;
-  for (i = 0; i < size; ++i) {
-    if (comparator(key, array[i].first) == 0) {
-      for (int j = i; j < size - 1; ++j) {
+//  int i;
+//  for (i = 0; i < size; ++i) {
+//    if (comparator(key, array[i].first) == 0) {
+//      for (int j = i; j < size - 1; ++j) {
+//        array[j] = array[j + 1];
+//      }
+//      IncreaseSize(-1);
+//      return size - 1;
+//    }
+//  }
+//  return size;
+
+  int lo = 0;
+  int hi = size;
+  int mi;
+  while (lo < hi) {
+    mi = (lo + hi) >> 1;
+    if (comparator(key, array[mi].first) < 0) {
+      hi = mi;
+    } else {
+      lo = mi + 1;
+    }
+  }
+  int delete_pos;
+  if (lo > 0) {
+    if (comparator(key, array[lo - 1].first) == 0) {
+      delete_pos = lo - 1;
+      for (int j = delete_pos; j < size - 1; ++j) {
         array[j] = array[j + 1];
       }
       IncreaseSize(-1);
