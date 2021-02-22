@@ -144,7 +144,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
       LeafPage *new_leaf_page = Split(leaf_page);
       KeyType middle_key = new_leaf_page->KeyAt(0);
       InsertIntoParent(leaf_page, middle_key, new_leaf_page, transaction);
-      reinterpret_cast<Page *>(new_leaf_page)->WUnlatch();
+      // reinterpret_cast<Page *>(new_leaf_page)->WUnlatch();
       // assert(reinterpret_cast<Page *>(new_leaf_page)->GetPinCount() == 1);
       buffer_pool_manager_->UnpinPage(new_leaf_page->GetPageId(), true);
     }
@@ -176,11 +176,11 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   if (nullptr == page) {
     throw Exception(ExceptionType::OUT_OF_MEMORY, "out of memory");
   }
-  page->WLatch();
+  // page->WLatch();
   if (node->IsLeafPage()) {
     LeafPage *new_leaf_page = reinterpret_cast<LeafPage *>(page);
     new_leaf_page->Init(new_page_id, INVALID_PAGE_ID, leaf_max_size_);
-    new_leaf_page->SetSize(0);
+    // new_leaf_page->SetSize(0);
     LeafPage *old_leaf_page = reinterpret_cast<LeafPage *>(node);
     old_leaf_page->MoveHalfTo(new_leaf_page);
     new_leaf_page->SetNextPageId(old_leaf_page->GetNextPageId());
@@ -190,7 +190,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   }
   InternalPage *new_internal_page = reinterpret_cast<InternalPage *>(page);
   new_internal_page->Init(new_page_id, INVALID_PAGE_ID, internal_max_size_);
-  new_internal_page->SetSize(0);
+  // new_internal_page->SetSize(0);
   InternalPage *old_internal_page = reinterpret_cast<InternalPage *>(node);
   old_internal_page->MoveHalfTo(new_internal_page, buffer_pool_manager_);
   // LOG_DEBUG("leaving from Split");
@@ -241,7 +241,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     InternalPage *new_internal_page = Split(parent_page);
     KeyType middle_key = parent_page->KeyAt(parent_page->GetMinSize());
     InsertIntoParent(parent_page, middle_key, new_internal_page, transaction);
-    reinterpret_cast<Page *>(new_internal_page)->WUnlatch();
+    // reinterpret_cast<Page *>(new_internal_page)->WUnlatch();
     // assert(reinterpret_cast<Page *>(new_internal_page)->GetPinCount() == 1);
     buffer_pool_manager_->UnpinPage(new_internal_page->GetPageId(), true);
   }
@@ -307,7 +307,11 @@ template <typename N>
 bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
   // LOG_DEBUG("entering into CoalesceOrRedistribute");
   if (node->IsRootPage()) {
+    page_id_t old_root = node->GetPageId();
     bool res = AdjustRoot(node);
+    if (res) {
+      transaction->AddIntoDeletedPageSet(old_root);
+    }
     // LOG_DEBUG("leaving from CoalesceOrRedistribute");
     return res;
   }
@@ -466,72 +470,121 @@ INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
   // LOG_DEBUG("entering into Redistribute");
+  int new_index;
+  page_id_t child_page_id;
   if (index == 0) {
-    if (node->IsLeafPage()) {
-      LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
-      LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
-
-      page_id_t parent_page_id = sibling_page->GetParentPageId();
-      Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-      InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-      KeyType to_parent_key = sibling_page->KeyAt(1);
-      int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
-      parent_page->SetKeyAt(middle_idx, to_parent_key);
-      buffer_pool_manager_->UnpinPage(parent_page_id, true);
-
-      sibling_page->MoveFirstToEndOf(leaf_page);
-      // LOG_DEBUG("leaving form Redistribute");
-      return;
-    }
-    InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
-    InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
-
-    page_id_t parent_page_id = sibling_page->GetParentPageId();
-    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-    KeyType to_parent_key = sibling_page->KeyAt(1);
-    int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
-    KeyType middle_key = parent_page->KeyAt(middle_idx);
-    parent_page->SetKeyAt(middle_idx, to_parent_key);
-    buffer_pool_manager_->UnpinPage(parent_page_id, true);
-
-    sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
-    // LOG_DEBUG("leaving form Redistribute");
-    return;
+    new_index = 1;
+    child_page_id = reinterpret_cast<BPlusTreePage *>(neighbor_node)->GetPageId();
+  } else {
+    new_index = reinterpret_cast<BPlusTreePage *>(neighbor_node)->GetSize() - 1;
+    child_page_id = reinterpret_cast<BPlusTreePage *>(node)->GetPageId();
   }
+
   if (node->IsLeafPage()) {
     LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
     LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
 
-    page_id_t parent_page_id = leaf_page->GetParentPageId();
+    page_id_t parent_page_id = sibling_page->GetParentPageId();
     Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
 
     InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-    KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
-    int middle_idx = parent_page->ValueIndex(leaf_page->GetPageId());
+    KeyType to_parent_key = sibling_page->KeyAt(new_index);
+    int middle_idx = parent_page->ValueIndex(child_page_id);
     parent_page->SetKeyAt(middle_idx, to_parent_key);
     buffer_pool_manager_->UnpinPage(parent_page_id, true);
-
-    sibling_page->MoveLastToFrontOf(leaf_page);
+    if (index == 0) {
+      sibling_page->MoveFirstToEndOf(leaf_page);
+    } else {
+      sibling_page->MoveLastToFrontOf(leaf_page);
+    }
     // LOG_DEBUG("leaving form Redistribute");
     return;
   }
-
   InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
   InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
 
-  page_id_t parent_page_id = internal_page->GetParentPageId();
+  page_id_t parent_page_id = sibling_page->GetParentPageId();
   Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-  // LOG_DEBUG("page size %d", page->GetPinCount());
-
   InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-  KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
-  int middle_idx = parent_page->ValueIndex(internal_page->GetPageId());
+  KeyType to_parent_key = sibling_page->KeyAt(new_index);
+  int middle_idx = parent_page->ValueIndex(child_page_id);
   KeyType middle_key = parent_page->KeyAt(middle_idx);
   parent_page->SetKeyAt(middle_idx, to_parent_key);
   buffer_pool_manager_->UnpinPage(parent_page_id, true);
-
-  sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
+  if (index  == 0) {
+    sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
+  } else {
+    sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
+  }
+  // LOG_DEBUG("leaving form Redistribute");
+  return;
+//   LOG_DEBUG("entering into Redistribute");
+//  if (index == 0) {
+//    if (node->IsLeafPage()) {
+//      LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
+//      LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
+//
+//      page_id_t parent_page_id = sibling_page->GetParentPageId();
+//      Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+//      InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+//      KeyType to_parent_key = sibling_page->KeyAt(1);
+//      int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
+//      parent_page->SetKeyAt(middle_idx, to_parent_key);
+//      buffer_pool_manager_->UnpinPage(parent_page_id, true);
+//
+//      sibling_page->MoveFirstToEndOf(leaf_page);
+//      // LOG_DEBUG("leaving form Redistribute");
+//      return;
+//    }
+//    InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
+//    InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
+//
+//    page_id_t parent_page_id = sibling_page->GetParentPageId();
+//    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+//    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+//    KeyType to_parent_key = sibling_page->KeyAt(1);
+//    int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
+//    KeyType middle_key = parent_page->KeyAt(middle_idx);
+//    parent_page->SetKeyAt(middle_idx, to_parent_key);
+//    buffer_pool_manager_->UnpinPage(parent_page_id, true);
+//
+//    sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
+//    // LOG_DEBUG("leaving form Redistribute");
+//    return;
+//  }
+//  if (node->IsLeafPage()) {
+//    LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
+//    LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
+//
+//    page_id_t parent_page_id = leaf_page->GetParentPageId();
+//    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+//
+//    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+//    KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
+//    int middle_idx = parent_page->ValueIndex(leaf_page->GetPageId());
+//    parent_page->SetKeyAt(middle_idx, to_parent_key);
+//    buffer_pool_manager_->UnpinPage(parent_page_id, true);
+//
+//    sibling_page->MoveLastToFrontOf(leaf_page);
+//    // LOG_DEBUG("leaving form Redistribute");
+//    return;
+//  }
+//
+//  InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
+//  InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
+//
+//  page_id_t parent_page_id = internal_page->GetParentPageId();
+//  Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+//  // LOG_DEBUG("page size %d", page->GetPinCount());
+//
+//  InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+//  KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
+//  int middle_idx = parent_page->ValueIndex(internal_page->GetPageId());
+//  KeyType middle_key = parent_page->KeyAt(middle_idx);
+//  parent_page->SetKeyAt(middle_idx, to_parent_key);
+//  buffer_pool_manager_->UnpinPage(parent_page_id, true);
+//
+//  sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
   // LOG_DEBUG("leaving form Redistribute");
 }
 /*
@@ -644,24 +697,7 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() {
-  //  if (IsEmpty()) {
-  //    return INDEXITERATOR_TYPE();
-  //  }
-  //  page_id_t child_page_id = root_page_id_;
-  //  Page *child_page = buffer_pool_manager_->FetchPage(child_page_id);
-  //  BPlusTreePage *b_plus_page = reinterpret_cast<BPlusTreePage *>(child_page);
-  //  while (!b_plus_page->IsLeafPage()) {
-  //    InternalPage *internal_page = reinterpret_cast<InternalPage *>(b_plus_page);
-  //    child_page_id = internal_page->ValueAt(internal_page->GetSize() - 1);
-  //    buffer_pool_manager_->UnpinPage(internal_page->GetPageId(), false);
-  //    child_page = buffer_pool_manager_->FetchPage(child_page_id);
-  //    b_plus_page = reinterpret_cast<BPlusTreePage *>(child_page);
-  //  }
-  //  int end_idx = b_plus_page->GetSize();
-  //  buffer_pool_manager_->UnpinPage(child_page_id, false);
-  return INDEXITERATOR_TYPE(buffer_pool_manager_, INVALID_PAGE_ID, -1);
-}
+INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(buffer_pool_manager_, INVALID_PAGE_ID, -1); }
 
 /*****************************************************************************
  * UTILITIES AND DEBUG

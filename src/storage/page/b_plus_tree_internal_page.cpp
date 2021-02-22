@@ -126,9 +126,10 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
     return GetSize();
   }
   int size = GetSize();
-  for (int n = size - 1; n > i; n--) {
-    array[n + 1] = array[n];
-  }
+  //  for (int n = size - 1; n > i; n--) {
+  //    array[n + 1] = array[n];
+  //  }
+  std::move_backward(array + i + 1, array + size, array + size + 1);
   array[i + 1] = std::make_pair(new_key, new_value);
   IncreaseSize(1);
   return size + 1;
@@ -155,9 +156,21 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {
+  //  int tail = GetSize();
+  //  for (int i = 0; i < size; ++i) {
+  //    array[tail++] = items[i];
+  //    page_id_t page_id = items[i].second;
+  //    Page *page = buffer_pool_manager->FetchPage(page_id);
+  //    auto internal_page = reinterpret_cast<BPlusTreeInternalPage *>(page);
+  //    internal_page->SetParentPageId(GetPageId());
+  //    buffer_pool_manager->UnpinPage(page_id, true);
+  //  }
+  //  IncreaseSize(size);
+
   int tail = GetSize();
+  std::copy_n(items, size, array + tail);
   for (int i = 0; i < size; ++i) {
-    array[tail++] = items[i];
+    // array[tail++] = items[i];
     page_id_t page_id = items[i].second;
     Page *page = buffer_pool_manager->FetchPage(page_id);
     auto internal_page = reinterpret_cast<BPlusTreeInternalPage *>(page);
@@ -177,11 +190,12 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
-  int size = GetSize();
-  while (index < size - 1) {
-    array[index] = array[index + 1];
-    index++;
-  }
+  //  int size = GetSize();
+  //  while (index < size - 1) {
+  //    array[index] = array[index + 1];
+  //    index++;
+  //  }
+  std::move(array + index + 1, array + GetSize(), array + index);
   IncreaseSize(-1);
 }
 
@@ -232,10 +246,11 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *rec
   recipient->CopyLastFrom(array[0], buffer_pool_manager);
   recipient->array[reci_tail].first = middle_key;
   // Remove(0);
-  int size = GetSize();
-  for (int i = 0; i < size - 1; ++i) {
-    array[i] = array[i + 1];
-  }
+  //  int size = GetSize();
+  //  for (int i = 0; i < size - 1; ++i) {
+  //    array[i] = array[i + 1];
+  //  }
+  std::move(array + 1, array + GetSize(), array);
   IncreaseSize(-1);
 }
 
@@ -270,9 +285,11 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
-  for (int n = GetSize() - 1; n >= 0; n--) {
-    array[n + 1] = array[n];
-  }
+  //  for (int n = GetSize() - 1; n >= 0; n--) {
+  //    array[n + 1] = array[n];
+  //  }
+  int size = GetSize();
+  std::move_backward(array, array + size, array + size + 1);
   array[0] = pair;
   page_id_t page_id = pair.second;
   Page *page = buffer_pool_manager->FetchPage(page_id);
