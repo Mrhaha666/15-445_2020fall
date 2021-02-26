@@ -659,15 +659,13 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() {
+  mutex_.lock();
   if (IsEmpty()) {
+    mutex_.unlock();
     return end();
   }
   KeyType key{};
-  Page *page = FindLeafPage(key, true);
-  LeafPage *leaf_page = reinterpret_cast<LeafPage *>(page);
-  page_id_t leaf_page_id = leaf_page->GetPageId();
-  buffer_pool_manager_->UnpinPage(leaf_page_id, false);
-  return INDEXITERATOR_TYPE(buffer_pool_manager_, leaf_page_id, 0);
+  return INDEXITERATOR_TYPE(buffer_pool_manager_, FindLeafPage(key, true), 0);
 }
 
 /*
@@ -677,17 +675,20 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::begin() {
  */
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
+  mutex_.lock();
   if (IsEmpty()) {
+    mutex_.unlock();
     return end();
   }
   Page *page = FindLeafPage(key);
   LeafPage *leaf_page = reinterpret_cast<LeafPage *>(page);
   int index = leaf_page->KeyIndex(key, comparator_);
   page_id_t leaf_page_id = leaf_page->GetPageId();
-  buffer_pool_manager_->UnpinPage(leaf_page_id, false);
   if (index != -1) {
-    return INDEXITERATOR_TYPE(buffer_pool_manager_, leaf_page_id, index);
+    return INDEXITERATOR_TYPE(buffer_pool_manager_, page, index);
   }
+  page->RUnlatch();
+  buffer_pool_manager_->UnpinPage(leaf_page_id, false);
   return end();
 }
 
@@ -697,7 +698,7 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::Begin(const KeyType &key) {
  * @return : index iterator
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(buffer_pool_manager_, INVALID_PAGE_ID, -1); }
+INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(buffer_pool_manager_, nullptr, -1); }
 
 /*****************************************************************************
  * UTILITIES AND DEBUG
@@ -709,9 +710,12 @@ INDEXITERATOR_TYPE BPLUSTREE_TYPE::end() { return INDEXITERATOR_TYPE(buffer_pool
 INDEX_TEMPLATE_ARGUMENTS
 Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
   // LOG_DEBUG("entering into FindLeafPage");
-
-  Page *page = buffer_pool_manager_->FetchPage(root_page_id_);
-  BPlusTreePage *b_plus_page = reinterpret_cast<BPlusTreePage *>(page);
+  Page *parent_page = buffer_pool_manager_->FetchPage(root_page_id_);
+  page_id_t parent_id = root_page_id_;
+  parent_page->RLatch();
+  mutex_.unlock();
+  BPlusTreePage *b_plus_page = reinterpret_cast<BPlusTreePage *>(parent_page);
+  Page *page;
   while (!b_plus_page->IsLeafPage()) {
     InternalPage *internal_page = reinterpret_cast<InternalPage *>(b_plus_page);
     page_id_t child_page_id;
@@ -720,12 +724,16 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
     } else {
       child_page_id = internal_page->Lookup(key, comparator_);
     }
-    buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     page = buffer_pool_manager_->FetchPage(child_page_id);
-    b_plus_page = reinterpret_cast<BPlusTreePage *>(page);
+    page->RLatch();
+    parent_page->RUnlatch();
+    buffer_pool_manager_->UnpinPage(parent_id, false);
+    parent_page = page;
+    parent_id = child_page_id;
+    b_plus_page = reinterpret_cast<BPlusTreePage *>(parent_page);
   }
   // LOG_DEBUG("leaving from FindLeafPage");
-  return page;
+  return parent_page;
 }
 
 INDEX_TEMPLATE_ARGUMENTS

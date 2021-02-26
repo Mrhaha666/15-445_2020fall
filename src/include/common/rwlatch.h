@@ -69,6 +69,22 @@ class ReaderWriterLatch {
   }
 
   /**
+   *
+   * Try to acquire a read latch.
+   * @return
+   * true   acquire the lock
+   * false  can not acquire the lock
+   */
+  bool TryRLock() {
+    std::unique_lock<mutex_t> latch(mutex_);
+    if (writer_entered_ || reader_count_ == MAX_READERS) {
+      return false;
+    }
+    reader_count_++;
+    return true;
+  }
+
+  /**
    * Release a read latch.
    */
   void RUnlock() {

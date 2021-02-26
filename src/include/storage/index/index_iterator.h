@@ -29,7 +29,7 @@ class IndexIterator {
   //  IndexIterator(BufferPoolManager *buffer_pool_manager, BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *leaf,
   //                BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *last_leaf, int index_in_leaf, int
   //                end_index_last_leaf);
-  IndexIterator(BufferPoolManager *buffer_pool_manager, page_id_t leaf_page_id, int index_in_leaf);
+  IndexIterator(BufferPoolManager *buffer_pool_manager, Page *leaf, int index_in_leaf);
 
   bool isEnd();
 
@@ -48,6 +48,7 @@ class IndexIterator {
   // add your own private member variables here
   BufferPoolManager *buffer_pool_manager_{nullptr};
   BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *leaf_{nullptr};
+  page_id_t leaf_id_{INVALID_PAGE_ID};
   //  BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *last_leaf_{nullptr};
   int index_in_leaf_{-1};
   //  int end_index_last_leaf_{};

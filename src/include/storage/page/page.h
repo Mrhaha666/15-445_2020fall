@@ -57,6 +57,9 @@ class Page {
   /** Acquire the page read latch. */
   inline void RLatch() { rwlatch_.RLock(); }
 
+  /** Try acquire the page read latch. */
+  inline bool TryRLatch() { return rwlatch_.TryRLock() ;}
+
   /** Release the page read latch. */
   inline void RUnlatch() { rwlatch_.RUnlock(); }
 
