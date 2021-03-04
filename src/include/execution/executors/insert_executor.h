@@ -45,7 +45,16 @@ class InsertExecutor : public AbstractExecutor {
   bool Next([[maybe_unused]] Tuple *tuple, RID *rid) override;
 
  private:
+  bool InsertTableAndIndex(Tuple &tuple, RID *rid, Transaction *txn);
+
   /** The insert plan node to be executed. */
   const InsertPlanNode *plan_;
+
+  const std::unique_ptr<AbstractExecutor> child_executor_;
+
+  TableMetadata *table_info_;
+
+  std::vector<IndexInfo *> table_indexes_;
+
 };
 }  // namespace bustub

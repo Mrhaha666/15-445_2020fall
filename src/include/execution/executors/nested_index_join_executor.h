@@ -43,6 +43,7 @@ class NestIndexJoinExecutor : public AbstractExecutor {
 
   const Schema *GetOutputSchema() override { return plan_->OutputSchema(); }
 
+
   void Init() override;
 
   bool Next(Tuple *tuple, RID *rid) override;
@@ -50,5 +51,10 @@ class NestIndexJoinExecutor : public AbstractExecutor {
  private:
   /** The nested index join plan node. */
   const NestedIndexJoinPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  TableMetadata *inner_table_info_;
+  IndexInfo *index_info_;
+  int outter_join_colidx_;
+
 };
 }  // namespace bustub

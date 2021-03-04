@@ -26,7 +26,7 @@ INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager, Page *leaf, int index_in_leaf)
     : buffer_pool_manager_{buffer_pool_manager}, index_in_leaf_{index_in_leaf} {
   if (nullptr != leaf) {
-    leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(leaf);
+    leaf_ = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leaf);
     leaf_id_ = leaf->GetPageId();
   }
 }

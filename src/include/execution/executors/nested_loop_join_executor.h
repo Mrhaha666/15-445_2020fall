@@ -48,5 +48,15 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
  private:
   /** The NestedLoop plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
+  const AbstractExpression *predicate_;
+  std::unique_ptr<AbstractExecutor> left_;
+  std::unique_ptr<AbstractExecutor> right_;
+  std::vector<Tuple> block_output_tuples_;
+  std::vector<Tuple> block_left_tuples_;
+  std::vector<Tuple> block_right_tuples_;
+  bool left_end_;
+  bool right_end_;
+  // 一页4k,假设一条记录50byte,则一块可以容纳大约 4 * 20条记录
+  static constexpr int BLOCK_TUPLES_NUM{4 * 20};
 };
 }  // namespace bustub
