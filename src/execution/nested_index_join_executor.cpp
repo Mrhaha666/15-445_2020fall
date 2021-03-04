@@ -32,7 +32,7 @@ void NestIndexJoinExecutor::Init() {
   const auto *left_child = dynamic_cast<const ColumnValueExpression *>(children[0]);
   BUSTUB_ASSERT(left_child != nullptr, "NestIndexJoinExecutor: left child should be a column_value exp");
   const auto *right_child = dynamic_cast<const ColumnValueExpression *>(children[1]);
-  BUSTUB_ASSERT(right_child != nullptr, "NestIndexJoinExecutor: right child should be a comparison exp");
+  BUSTUB_ASSERT(right_child != nullptr, "NestIndexJoinExecutor: right child should be a column_value exp");
   const auto *outter_child = left_child->GetTupleIdx() == 0 ? left_child : right_child;
   BUSTUB_ASSERT(index_info_->key_schema_.GetColumnCount() != 1,
                 "NestIndexJoinExecutor: index schema should only have one column");
