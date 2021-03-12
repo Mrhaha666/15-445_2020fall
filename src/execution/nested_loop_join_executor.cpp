@@ -36,7 +36,7 @@ bool NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) {
   const auto *left_schema = plan_->GetLeftPlan()->OutputSchema();
   const auto *right_schema = plan_->GetRightPlan()->OutputSchema();
   const auto *output_schema = plan_->OutputSchema();
-  do {
+  while(block_output_tuples_.empty() && !(left_end_ && right_end_)) {
     if (right_end_) {
       block_left_tuples_.clear();
       right_end_ = false;
@@ -71,7 +71,7 @@ bool NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) {
         }
       }
     }
-  } while(block_output_tuples_.empty() && !(left_end_ && right_end_));
+  }
   if (!block_output_tuples_.empty()) {
     *tuple = block_output_tuples_.back();
     block_output_tuples_.pop_back();

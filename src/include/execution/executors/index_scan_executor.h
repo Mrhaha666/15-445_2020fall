@@ -46,7 +46,7 @@ class IndexScanExecutor : public AbstractExecutor {
   const IndexScanPlanNode *plan_;
   const AbstractExpression *predicate_;
   IndexInfo *index_info_;
-  TableHeap *table_;
+  TableMetadata *table_meta_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> iter_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> end_iter_;
 };

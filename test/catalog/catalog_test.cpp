@@ -45,6 +45,7 @@ TEST(CatalogTest, CreateTableTest) {
   // It is up to you to extend it
   EXPECT_NE(nullptr, catalog->GetTable("potato"));
 
+
   delete catalog;
   delete bpm;
   delete disk_manager;

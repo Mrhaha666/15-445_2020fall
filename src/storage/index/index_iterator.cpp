@@ -18,7 +18,7 @@ INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE::~IndexIterator() {
   if (buffer_pool_manager_ != nullptr && leaf_ != nullptr) {
     reinterpret_cast<Page *>(leaf_)->RUnlatch();
-    buffer_pool_manager_->UnpinPage(leaf_id_, false);
+    buffer_pool_manager_->UnpinPage(leaf_->GetPageId(), false);
   }
 }
 
@@ -27,7 +27,7 @@ INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *buffer_pool_manager, Page *
     : buffer_pool_manager_{buffer_pool_manager}, index_in_leaf_{index_in_leaf} {
   if (nullptr != leaf) {
     leaf_ = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(leaf);
-    leaf_id_ = leaf->GetPageId();
+    // leaf_id_ = leaf->GetPageId();
   }
 }
 
@@ -44,24 +44,24 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
     page_id_t next_page_id = leaf_->GetNextPageId();
     if (next_page_id == INVALID_PAGE_ID) {
       reinterpret_cast<Page *>(leaf_)->RUnlatch();
-      buffer_pool_manager_->UnpinPage(leaf_id_, false);
+      buffer_pool_manager_->UnpinPage(leaf_->GetPageId(), false);
       leaf_ = nullptr;
-      leaf_id_ = INVALID_PAGE_ID;
+      // leaf_id_ = INVALID_PAGE_ID;
       index_in_leaf_ = -1;
     } else {
       Page *page = buffer_pool_manager_->FetchPage(next_page_id);
       reinterpret_cast<Page *>(leaf_)->RUnlatch();
-      buffer_pool_manager_->UnpinPage(leaf_id_, false);
+      buffer_pool_manager_->UnpinPage(leaf_->GetPageId(), false);
       if (page->TryRLatch()) {
         leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
-        leaf_id_ = leaf_->GetPageId();
+        // leaf_id_ = leaf_->GetPageId();
         index_in_leaf_ = 0;
       } else {
         reinterpret_cast<Page *>(leaf_)->RUnlatch();
-        buffer_pool_manager_->UnpinPage(leaf_id_, false);
+        buffer_pool_manager_->UnpinPage(leaf_->GetPageId(), false);
         buffer_pool_manager_->UnpinPage(next_page_id, false);
         leaf_ = nullptr;
-        leaf_id_ = INVALID_PAGE_ID;
+        // leaf_id_ = INVALID_PAGE_ID;
         index_in_leaf_ = -1;
         throw std::exception();
       }
@@ -83,11 +83,11 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator=(const INDEXITERATOR_TYPE &rhs)
       Page *page = buffer_pool_manager_->FetchPage((rhs.leaf_)->GetPageId());
       page->RLatch();
       leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
-      leaf_id_ = leaf_->GetPageId();
+      // leaf_id_ = leaf_->GetPageId();
       index_in_leaf_ = rhs.index_in_leaf_;
     } else {
       leaf_ = nullptr;
-      leaf_id_ = INVALID_PAGE_ID;
+      // leaf_id_ = INVALID_PAGE_ID;
       index_in_leaf_ = INVALID_PAGE_ID;
     }
   }
@@ -101,7 +101,7 @@ INDEXITERATOR_TYPE::IndexIterator(const IndexIterator &rhs) {
     Page *page = buffer_pool_manager_->FetchPage((rhs.leaf_)->GetPageId());
     page->RLatch();
     leaf_ = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(page);
-    leaf_id_ = leaf_->GetPageId();
+    // leaf_id_ = leaf_->GetPageId();
     index_in_leaf_ = rhs.index_in_leaf_;
   }
 }

@@ -48,7 +48,7 @@ class IndexIterator {
   // add your own private member variables here
   BufferPoolManager *buffer_pool_manager_{nullptr};
   B_PLUS_TREE_LEAF_PAGE_TYPE *leaf_{nullptr};
-  page_id_t leaf_id_{INVALID_PAGE_ID};
+  // page_id_t leaf_id_{INVALID_PAGE_ID};
   //  BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *last_leaf_{nullptr};
   int index_in_leaf_{-1};
   //  int end_index_last_leaf_{};
