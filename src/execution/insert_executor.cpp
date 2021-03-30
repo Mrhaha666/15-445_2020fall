@@ -28,14 +28,14 @@ void InsertExecutor::Init() {
   }
 }
 
-bool InsertExecutor::InsertTableAndIndex(Tuple &tuple, RID *rid, Transaction *txn){
-  if (table_info_->table_->InsertTuple(tuple, rid, txn)) {
+void InsertExecutor::InsertTableAndIndex(Tuple *tuple, RID *rid, Transaction *txn) {
+  if (table_info_->table_->InsertTuple(*tuple, rid, txn)) {
     for (const auto &index_info : table_indexes_) {
       Index *index = index_info->index_.get();
-      Tuple index_key(tuple.KeyFromTuple(table_info_->schema_, index_info->key_schema_, index->GetKeyAttrs()));
+      Tuple index_key(tuple->KeyFromTuple(table_info_->schema_, index_info->key_schema_, index->GetKeyAttrs()));
       index->InsertEntry(index_key, *rid, txn);
     }
-    return true;
+    return;
   }
   throw Exception("INSERT, tuple to be inserted is bigger than a page");
 }
@@ -45,12 +45,12 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
     const auto &raw_values = plan_->RawValues();
     for (const auto &value : raw_values) {
       *tuple = Tuple(value, &table_info_->schema_);
-      InsertTableAndIndex(*tuple, rid, exec_ctx_->GetTransaction());
+      InsertTableAndIndex(tuple, rid, exec_ctx_->GetTransaction());
     }
     return false;
   }
-  if (child_executor_->Next(tuple, rid)) {
-    return InsertTableAndIndex(*tuple, rid, exec_ctx_->GetTransaction());
+  while (child_executor_->Next(tuple, rid)) {
+    InsertTableAndIndex(tuple, rid, exec_ctx_->GetTransaction());
   }
   return false;
 }

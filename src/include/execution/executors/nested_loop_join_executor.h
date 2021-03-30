@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -57,6 +58,6 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
   bool left_end_;
   bool right_end_;
   // 一页4k,假设一条记录50byte,则一块可以容纳大约 4 * 20条记录
-  static constexpr int BLOCK_TUPLES_NUM{4};
+  static constexpr int BLOCK_TUPLES_NUM{4 * 20};
 };
 }  // namespace bustub

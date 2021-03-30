@@ -511,80 +511,81 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
   KeyType middle_key = parent_page->KeyAt(middle_idx);
   parent_page->SetKeyAt(middle_idx, to_parent_key);
   buffer_pool_manager_->UnpinPage(parent_page_id, true);
-  if (index  == 0) {
+  if (index == 0) {
     sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
   } else {
     sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
   }
   // LOG_DEBUG("leaving form Redistribute");
-  return;
-//   LOG_DEBUG("entering into Redistribute");
-//  if (index == 0) {
-//    if (node->IsLeafPage()) {
-//      LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
-//      LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
-//
-//      page_id_t parent_page_id = sibling_page->GetParentPageId();
-//      Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-//      InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-//      KeyType to_parent_key = sibling_page->KeyAt(1);
-//      int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
-//      parent_page->SetKeyAt(middle_idx, to_parent_key);
-//      buffer_pool_manager_->UnpinPage(parent_page_id, true);
-//
-//      sibling_page->MoveFirstToEndOf(leaf_page);
-//      // LOG_DEBUG("leaving form Redistribute");
-//      return;
-//    }
-//    InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
-//    InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
-//
-//    page_id_t parent_page_id = sibling_page->GetParentPageId();
-//    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-//    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-//    KeyType to_parent_key = sibling_page->KeyAt(1);
-//    int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
-//    KeyType middle_key = parent_page->KeyAt(middle_idx);
-//    parent_page->SetKeyAt(middle_idx, to_parent_key);
-//    buffer_pool_manager_->UnpinPage(parent_page_id, true);
-//
-//    sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
-//    // LOG_DEBUG("leaving form Redistribute");
-//    return;
-//  }
-//  if (node->IsLeafPage()) {
-//    LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
-//    LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
-//
-//    page_id_t parent_page_id = leaf_page->GetParentPageId();
-//    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-//
-//    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-//    KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
-//    int middle_idx = parent_page->ValueIndex(leaf_page->GetPageId());
-//    parent_page->SetKeyAt(middle_idx, to_parent_key);
-//    buffer_pool_manager_->UnpinPage(parent_page_id, true);
-//
-//    sibling_page->MoveLastToFrontOf(leaf_page);
-//    // LOG_DEBUG("leaving form Redistribute");
-//    return;
-//  }
-//
-//  InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
-//  InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
-//
-//  page_id_t parent_page_id = internal_page->GetParentPageId();
-//  Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
-//  // LOG_DEBUG("page size %d", page->GetPinCount());
-//
-//  InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
-//  KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
-//  int middle_idx = parent_page->ValueIndex(internal_page->GetPageId());
-//  KeyType middle_key = parent_page->KeyAt(middle_idx);
-//  parent_page->SetKeyAt(middle_idx, to_parent_key);
-//  buffer_pool_manager_->UnpinPage(parent_page_id, true);
-//
-//  sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
+  // return;
+
+  //   LOG_DEBUG("entering into Redistribute");
+  //  if (index == 0) {
+  //    if (node->IsLeafPage()) {
+  //      LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
+  //      LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
+  //
+  //      page_id_t parent_page_id = sibling_page->GetParentPageId();
+  //      Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+  //      InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+  //      KeyType to_parent_key = sibling_page->KeyAt(1);
+  //      int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
+  //      parent_page->SetKeyAt(middle_idx, to_parent_key);
+  //      buffer_pool_manager_->UnpinPage(parent_page_id, true);
+  //
+  //      sibling_page->MoveFirstToEndOf(leaf_page);
+  //      // LOG_DEBUG("leaving form Redistribute");
+  //      return;
+  //    }
+  //    InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
+  //    InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
+  //
+  //    page_id_t parent_page_id = sibling_page->GetParentPageId();
+  //    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+  //    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+  //    KeyType to_parent_key = sibling_page->KeyAt(1);
+  //    int middle_idx = parent_page->ValueIndex(sibling_page->GetPageId());
+  //    KeyType middle_key = parent_page->KeyAt(middle_idx);
+  //    parent_page->SetKeyAt(middle_idx, to_parent_key);
+  //    buffer_pool_manager_->UnpinPage(parent_page_id, true);
+  //
+  //    sibling_page->MoveFirstToEndOf(internal_page, middle_key, buffer_pool_manager_);
+  //    // LOG_DEBUG("leaving form Redistribute");
+  //    return;
+  //  }
+  //  if (node->IsLeafPage()) {
+  //    LeafPage *leaf_page = reinterpret_cast<LeafPage *>(node);
+  //    LeafPage *sibling_page = reinterpret_cast<LeafPage *>(neighbor_node);
+  //
+  //    page_id_t parent_page_id = leaf_page->GetParentPageId();
+  //    Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+  //
+  //    InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+  //    KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
+  //    int middle_idx = parent_page->ValueIndex(leaf_page->GetPageId());
+  //    parent_page->SetKeyAt(middle_idx, to_parent_key);
+  //    buffer_pool_manager_->UnpinPage(parent_page_id, true);
+  //
+  //    sibling_page->MoveLastToFrontOf(leaf_page);
+  //    // LOG_DEBUG("leaving form Redistribute");
+  //    return;
+  //  }
+  //
+  //  InternalPage *internal_page = reinterpret_cast<InternalPage *>(node);
+  //  InternalPage *sibling_page = reinterpret_cast<InternalPage *>(neighbor_node);
+  //
+  //  page_id_t parent_page_id = internal_page->GetParentPageId();
+  //  Page *page = buffer_pool_manager_->FetchPage(parent_page_id);
+  //  // LOG_DEBUG("page size %d", page->GetPinCount());
+  //
+  //  InternalPage *parent_page = reinterpret_cast<InternalPage *>(page);
+  //  KeyType to_parent_key = sibling_page->KeyAt(sibling_page->GetSize() - 1);
+  //  int middle_idx = parent_page->ValueIndex(internal_page->GetPageId());
+  //  KeyType middle_key = parent_page->KeyAt(middle_idx);
+  //  parent_page->SetKeyAt(middle_idx, to_parent_key);
+  //  buffer_pool_manager_->UnpinPage(parent_page_id, true);
+  //
+  //  sibling_page->MoveLastToFrontOf(internal_page, middle_key, buffer_pool_manager_);
   // LOG_DEBUG("leaving form Redistribute");
 }
 /*

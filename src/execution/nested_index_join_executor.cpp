@@ -11,30 +11,31 @@
 //===----------------------------------------------------------------------===//
 
 #include "execution/executors/nested_index_join_executor.h"
-#include "execution/expressions/comparison_expression.h"
 #include "execution/expressions/column_value_expression.h"
-
+#include "execution/expressions/comparison_expression.h"
 
 namespace bustub {
 
 NestIndexJoinExecutor::NestIndexJoinExecutor(ExecutorContext *exec_ctx, const NestedIndexJoinPlanNode *plan,
                                              std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx), plan_{plan}, child_executor_(std::move(child_executor)),
-      inner_table_info_{exec_ctx_->GetCatalog()->GetTable(plan_->GetInnerTableOid())},
-      index_info_{exec_ctx_->GetCatalog()->GetIndex(plan_->GetIndexName(), inner_table_info_->name_)} {}
+    : AbstractExecutor(exec_ctx),
+      plan_{plan},
+      child_executor_(std::move(child_executor)) {}
 
 void NestIndexJoinExecutor::Init() {
+  inner_table_info_ = exec_ctx_->GetCatalog()->GetTable(plan_->GetInnerTableOid());
+  index_info_ = exec_ctx_->GetCatalog()->GetIndex(plan_->GetIndexName(), inner_table_info_->name_);
   child_executor_->Init();
   const auto *comp_exp = dynamic_cast<const ComparisonExpression *>(plan_->Predicate());
   BUSTUB_ASSERT(comp_exp != nullptr, "NestIndexJoinExecutor: predicate should be a comparison exp");
   const auto &children = comp_exp->GetChildren();
-  BUSTUB_ASSERT(children.size() != 2, "NestIndexJoinExecutor: predicate should have two children");
+  BUSTUB_ASSERT(children.size() == 2, "NestIndexJoinExecutor: predicate should have two children");
   const auto *left_child = dynamic_cast<const ColumnValueExpression *>(children[0]);
   BUSTUB_ASSERT(left_child != nullptr, "NestIndexJoinExecutor: left child should be a column_value exp");
   const auto *right_child = dynamic_cast<const ColumnValueExpression *>(children[1]);
   BUSTUB_ASSERT(right_child != nullptr, "NestIndexJoinExecutor: right child should be a column_value exp");
   const auto *outter_child = left_child->GetTupleIdx() == 0 ? left_child : right_child;
-  BUSTUB_ASSERT(index_info_->key_schema_.GetColumnCount() != 1,
+  BUSTUB_ASSERT(index_info_->key_schema_.GetColumnCount() == 1,
                 "NestIndexJoinExecutor: index schema should only have one column");
   outter_join_colidx_ = outter_child->GetColIdx();
 }

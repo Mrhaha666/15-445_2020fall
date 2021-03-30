@@ -18,15 +18,15 @@ namespace bustub {
 
 AggregationExecutor::AggregationExecutor(ExecutorContext *exec_ctx, const AggregationPlanNode *plan,
                                          std::unique_ptr<AbstractExecutor> &&child)
-    : AbstractExecutor(exec_ctx), plan_{plan}, child_(std::move(child)),
+    : AbstractExecutor(exec_ctx),
+      plan_{plan},
+      child_(std::move(child)),
       aht_(plan_->GetAggregates(), plan_->GetAggregateTypes()),
-      aht_iterator_(aht_.End()), is_group_by_term_{false} {}
+      aht_iterator_(aht_.End()){}
 
 const AbstractExecutor *AggregationExecutor::GetChildExecutor() const { return child_.get(); }
 
-void AggregationExecutor::Init() {
-  child_->Init();
-}
+void AggregationExecutor::Init() { child_->Init(); }
 
 bool AggregationExecutor::Next(Tuple *tuple, RID *rid) {
   if (!output_.empty()) {

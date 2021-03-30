@@ -17,8 +17,13 @@ namespace bustub {
 NestedLoopJoinExecutor::NestedLoopJoinExecutor(ExecutorContext *exec_ctx, const NestedLoopJoinPlanNode *plan,
                                                std::unique_ptr<AbstractExecutor> &&left_executor,
                                                std::unique_ptr<AbstractExecutor> &&right_executor)
-    : AbstractExecutor(exec_ctx), plan_{plan}, predicate_{plan_->Predicate()},
-      left_(std::move(left_executor)), right_(std::move(right_executor)), left_end_{}, right_end_{} {}
+    : AbstractExecutor(exec_ctx),
+      plan_{plan},
+      predicate_{plan_->Predicate()},
+      left_(std::move(left_executor)),
+      right_(std::move(right_executor)),
+      left_end_{},
+      right_end_{} {}
 
 void NestedLoopJoinExecutor::Init() {
   left_->Init();
@@ -36,7 +41,7 @@ bool NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) {
   const auto *left_schema = plan_->GetLeftPlan()->OutputSchema();
   const auto *right_schema = plan_->GetRightPlan()->OutputSchema();
   const auto *output_schema = plan_->OutputSchema();
-  while(block_output_tuples_.empty() && !(left_end_ && right_end_)) {
+  while (block_output_tuples_.empty() && !(left_end_ && right_end_)) {
     if (right_end_) {
       block_left_tuples_.clear();
       right_end_ = false;

@@ -75,20 +75,20 @@ void LRUReplacer::Unpin(frame_id_t frame_id) {
 size_t LRUReplacer::Size() { return size_; }
 
 inline size_t LRUReplacer::GetPinBit(frame_id_t frame_id) {
-  size_t idx1 = frame_id / (sizeof(unsigned char) << 3);
-  size_t idx2 = frame_id - idx1 * (sizeof(unsigned char) << 3);
+  int32_t idx1 = frame_id >> (sizeof(unsigned char) + 2);
+  int32_t idx2 = frame_id & ~(static_cast<unsigned int>(-1) << (sizeof(unsigned char) + 2));
   return pin_bits_[idx1] & (0x01 << idx2);
 }
 
 inline void LRUReplacer::SetPinBit(frame_id_t frame_id) {
-  size_t idx1 = frame_id / (sizeof(unsigned char) << 3);
-  size_t idx2 = frame_id - idx1 * (sizeof(unsigned char) << 3);
+  int32_t idx1 = frame_id >> (sizeof(unsigned char) + 2);
+  int32_t idx2 = frame_id & ~(static_cast<uint32_t>(-1) << (sizeof(unsigned char) + 2));
   pin_bits_[idx1] |= (0x01 << idx2);
 }
 
 inline void LRUReplacer::ClrPinBit(frame_id_t frame_id) {
-  size_t idx1 = frame_id / (sizeof(unsigned char) << 3);
-  size_t idx2 = frame_id - idx1 * (sizeof(unsigned char) << 3);
+  int32_t idx1 = frame_id >> (sizeof(unsigned char) + 2);
+  int32_t idx2 = frame_id & ~(static_cast<unsigned int>(-1) << (sizeof(unsigned char) + 2));
   pin_bits_[idx1] &= ~(0x01 << idx2);
 }
 

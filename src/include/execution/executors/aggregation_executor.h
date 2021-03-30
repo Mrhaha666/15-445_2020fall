@@ -199,7 +199,6 @@ class AggregationExecutor : public AbstractExecutor {
   SimpleAggregationHashTable aht_;
   /** Simple aggregation hash table iterator. */
   SimpleAggregationHashTable::Iterator aht_iterator_;
-  bool is_group_by_term_;
   std::vector<Tuple> output_;
 };
 }  // namespace bustub

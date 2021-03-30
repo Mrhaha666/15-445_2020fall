@@ -31,13 +31,13 @@ bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   if (child_executor_->Next(tuple, rid)) {
     Tuple new_tuple = GenerateUpdatedTuple(*tuple);
     if (table_info_->table_->UpdateTuple(new_tuple, *rid, exec_ctx_->GetTransaction())) {
-      UpdateIndex(*tuple, new_tuple, *rid);
+      UpdateIndex(tuple, &new_tuple, *rid);
       return true;
     }
     // 更新失败, 先删除再插入
     table_info_->table_->MarkDelete(*rid, exec_ctx_->GetTransaction());
     if (table_info_->table_->InsertTuple(new_tuple, rid, exec_ctx_->GetTransaction())) {
-      UpdateIndex(*tuple, new_tuple, *rid, true);
+      UpdateIndex(tuple, &new_tuple, *rid, true);
       return true;
     }
     throw Exception("UPDATE, new tuple is larger than a page");

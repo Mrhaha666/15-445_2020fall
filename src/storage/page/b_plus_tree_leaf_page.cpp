@@ -125,10 +125,8 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
       lo = mi + 1;
     }
   }
-  if (lo > 0) {
-    if (comparator(key, array[lo - 1].first) == 0) {
-      return size;
-    }
+  if (lo > 0 && comparator(key, array[lo - 1].first) == 0) {
+    return size;
   }
   int insert_pos = lo;
   //  int insert_pos = size;
@@ -200,11 +198,9 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
       lo = mi + 1;
     }
   }
-  if (lo > 0) {
-    if (comparator(key, array[lo - 1].first) == 0) {
-      *value = array[lo - 1].second;
-      return true;
-    }
+  if (lo > 0 && comparator(key, array[lo - 1].first) == 0) {
+    *value = array[lo - 1].second;
+    return true;
   }
   return false;
 

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -45,7 +46,7 @@ class InsertExecutor : public AbstractExecutor {
   bool Next([[maybe_unused]] Tuple *tuple, RID *rid) override;
 
  private:
-  bool InsertTableAndIndex(Tuple &tuple, RID *rid, Transaction *txn);
+  void InsertTableAndIndex(Tuple *tuple, RID *rid, Transaction *txn);
 
   /** The insert plan node to be executed. */
   const InsertPlanNode *plan_;
@@ -55,6 +56,5 @@ class InsertExecutor : public AbstractExecutor {
   TableMetadata *table_info_;
 
   std::vector<IndexInfo *> table_indexes_;
-
 };
 }  // namespace bustub

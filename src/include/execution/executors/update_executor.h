@@ -77,24 +77,24 @@ class UpdateExecutor : public AbstractExecutor {
 
   bool IsUpdateIndex(const std::vector<uint32_t> &key_attrs) {
     auto *update_attrs = plan_->GetUpdateAttr();
-    return std::any_of(key_attrs.begin(), key_attrs.end(),
-                [update_attrs] (uint32_t key_attr) {return update_attrs->find(key_attr) != update_attrs->end();});
-//    for (auto key_attr : key_attrs) {
-//      if (update_attrs->find(key_attr) != update_attrs->end()) {
-//        return true;
-//      }
-//    }
-//    return false;
+    return std::any_of(key_attrs.begin(), key_attrs.end(), [update_attrs](uint32_t key_attr) {
+      return update_attrs->find(key_attr) != update_attrs->end();
+    });
+    //    for (auto key_attr : key_attrs) {
+    //      if (update_attrs->find(key_attr) != update_attrs->end()) {
+    //        return true;
+    //      }
+    //    }
+    //    return false;
   }
 
-
-  void UpdateIndex(Tuple &old_tuple, Tuple &new_tuple, const RID &rid, bool must_update = false) {
+  void UpdateIndex(Tuple *old_tuple, Tuple *new_tuple, const RID &rid, bool must_update = false) {
     for (const auto &index_info : table_indexes_) {
       Index *index = index_info->index_.get();
       if (must_update || IsUpdateIndex(index->GetKeyAttrs())) {
         Schema table_schema = table_info_->schema_;
-        Tuple old_key = old_tuple.KeyFromTuple(table_schema, index_info->key_schema_, index->GetKeyAttrs());
-        Tuple new_key = new_tuple.KeyFromTuple(table_schema, index_info->key_schema_, index->GetKeyAttrs());
+        Tuple old_key = old_tuple->KeyFromTuple(table_schema, index_info->key_schema_, index->GetKeyAttrs());
+        Tuple new_key = new_tuple->KeyFromTuple(table_schema, index_info->key_schema_, index->GetKeyAttrs());
         index->DeleteEntry(old_key, rid, exec_ctx_->GetTransaction());
         index->InsertEntry(new_key, rid, exec_ctx_->GetTransaction());
       }

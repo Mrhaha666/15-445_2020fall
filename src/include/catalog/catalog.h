@@ -77,7 +77,8 @@ class Catalog {
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    auto res = new TableMetadata(schema, table_name, std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn), next_table_oid_++);
+    auto res = new TableMetadata(
+        schema, table_name, std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn), next_table_oid_++);
     tables_.insert(std::make_pair(res->oid_, std::unique_ptr<TableMetadata>(res)));
     names_.insert(std::make_pair(table_name, res->oid_));
     return res;
@@ -120,15 +121,16 @@ class Catalog {
   IndexInfo *CreateIndex(Transaction *txn, const std::string &index_name, const std::string &table_name,
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
-    try {
-      GetTable(table_name);
-    } catch (std::out_of_range &e) {
-      CreateTable(txn, table_name, schema);
-    }
+    auto *table_meta = GetTable(table_name);
     auto index_meta_p = new IndexMetadata(index_name, table_name, &schema, key_attrs);
     auto index_p = new BPLUSTREE_INDEX_TYPE(index_meta_p, bpm_);
-    auto res = new IndexInfo(key_schema, index_name, std::unique_ptr<Index>(index_p),
-                             next_index_oid_++, table_name, keysize);
+    auto end_iter = table_meta->table_->End();
+    for (auto iter = table_meta->table_->Begin(txn); iter != end_iter; ++iter) {
+      Tuple key(iter->KeyFromTuple(table_meta->schema_, key_schema, key_attrs));
+      index_p->InsertEntry(key, iter->GetRid(), txn);
+    }
+    auto res =
+        new IndexInfo(key_schema, index_name, std::unique_ptr<Index>(index_p), next_index_oid_++, table_name, keysize);
     auto iter = index_names_.find(table_name);
     if (iter == index_names_.end()) {
       index_names_.insert(std::make_pair(table_name, std::unordered_map<std::string, index_oid_t>()));
@@ -138,7 +140,6 @@ class Catalog {
     BUSTUB_ASSERT(name2oid.count(index_name) == 0, "index names should be unique!");
     name2oid.insert(std::make_pair(index_name, res->index_oid_));
     indexes_.insert(std::make_pair(res->index_oid_, std::unique_ptr<IndexInfo>(res)));
-
     return res;
   }
 
@@ -167,7 +168,7 @@ class Catalog {
     auto iter1 = index_names_.find(table_name);
     if (iter1 != index_names_.end()) {
       const auto &name2oid = iter1->second;
-      for (const auto& elem : name2oid) {
+      for (const auto &elem : name2oid) {
         table_indexes.push_back(GetIndex(elem.second));
       }
     }
